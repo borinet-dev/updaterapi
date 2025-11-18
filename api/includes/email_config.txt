@@ -1,0 +1,6 @@
+SMTP=smtp.resend.com
+PORT=587
+TLS=true
+MAIL_ID=resend
+APP_PASSWORD=re_i6TvaAmX_3GdpX3fmc35xgNxR15VYiCNt
+FROM=no-reply@l2jliberty.org
