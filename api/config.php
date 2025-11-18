@@ -1,6 +1,6 @@
 <?php
 // DB 접속 정보
-define('DB_HOST', '127.0.0.1');
+define('DB_HOST', '45.250.222.36');
 define('DB_USER', 'root');
 define('DB_PASS', 'wlsxo4451');
 
