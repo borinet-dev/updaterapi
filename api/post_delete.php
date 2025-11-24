@@ -33,7 +33,7 @@ $pdo = get_pdo_launcher();
 
 // 게시글 조회
 $stmt = $pdo->prepare("
-    SELECT p.id, p.board_id, p.author_login, p.is_deleted
+    SELECT p.id, p.board_id, p.author_login
     FROM launcher_post p
     WHERE p.id = :id
     LIMIT 1
@@ -41,7 +41,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([':id' => $postId]);
 $post = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$post || (int)$post['is_deleted'] === 1) {
+if (!$post) {
     json_error('존재하지 않거나 이미 삭제된 게시글입니다.', 404);
 }
 
@@ -68,12 +68,11 @@ if ($isAdminBoard) {
     }
 }
 
-// 댓글 개수 확인 (삭제되지 않은 것만)
+// 댓글 개수 확인
 $stmt = $pdo->prepare("
     SELECT COUNT(*) AS cnt
     FROM launcher_comment
     WHERE post_id = :post_id
-      AND is_deleted = 0
 ");
 $stmt->execute([':post_id' => $postId]);
 $commentCount = (int)$stmt->fetchColumn();
@@ -82,19 +81,19 @@ if ($commentCount > 0 && !$isAdminUser) {
     json_error('댓글이 있는 게시글은 삭제할 수 없습니다.', 400);
 }
 
-// 소프트 삭제
-$now = date('Y-m-d H:i:s');
-
+// 댓글 먼저 삭제
 $stmt = $pdo->prepare("
-    UPDATE launcher_post
-    SET is_deleted = 1,
-        updated_at = :updated_at
+    DELETE FROM launcher_comment
+    WHERE post_id = :post_id
+");
+$stmt->execute([':post_id' => $postId]);
+
+// 게시글 하드 삭제
+$stmt = $pdo->prepare("
+    DELETE FROM launcher_post
     WHERE id = :id
 ");
-$stmt->execute([
-    ':updated_at' => $now,
-    ':id'         => $postId,
-]);
+$stmt->execute([':id' => $postId]);
 
 json_response([
     'success' => true,

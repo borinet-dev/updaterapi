@@ -18,7 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $accountLogin = require_auth();
 
-$input = json_decode(file_get_contents('php://input'), true);
+// 원본 바디를 먼저 읽어서 로그로 남김
+$rawBody = file_get_contents('php://input');
+
+$input = json_decode($rawBody, true);
 if (!is_array($input)) {
     $input = $_POST;
 }
@@ -27,6 +30,13 @@ $boardCode   = isset($input['board']) ? trim((string)$input['board']) : '';
 $subject     = isset($input['subject']) ? trim((string)$input['subject']) : '';
 $contentHtml = isset($input['contentHtml']) ? (string)$input['contentHtml'] : '';
 $category    = isset($input['category']) ? trim((string)$input['category']) : '';
+// 공지 여부 (런처에서 isNotice 또는 IsNotice 로 true/false 또는 0/1 전달)
+//    기본값: 0 (일반 글), 관리자인 경우에만 1로 승격
+$isNoticeRaw = $input['isNotice'] ?? ($input['IsNotice'] ?? null);
+$isNotice    = 0;
+
+$isSecretRaw = $input['isSecret'] ?? ($input['IsSecret'] ?? null);
+$isSecret    = 0;
 
 // 런처에서 넘겨주는 선택 캐릭터 닉네임
 $authorName  = isset($input['authorName']) ? trim((string)$input['authorName']) : '';
@@ -44,7 +54,7 @@ $pdo = get_pdo_launcher();
 
 // 게시판 정보
 $stmt = $pdo->prepare("
-    SELECT id, code, name, allow_write
+    SELECT id, code, name, isAminBoard, category
     FROM launcher_board
     WHERE code = :code
     LIMIT 1
@@ -56,38 +66,55 @@ if (!$board) {
     json_error('존재하지 않는 게시판입니다.', 404);
 }
 
-if (!(bool)$board['allow_write']) {
-    json_error('이 게시판에는 글을 작성할 수 없습니다.', 403);
+$boardId      = (int)$board['id'];
+$boardCode    = (string)$board['code'];
+$isAdminBoard = (bool)$board['isAminBoard'];
+$boardCategoryConfig = isset($board['category']) ? trim((string)$board['category']) : '';
+
+// 카테고리 설정이 있는 게시판인데 category 가 비어 있으면 작성 불가
+if ($boardCategoryConfig !== '' && $category === '' && !is_admin_account($accountLogin)) {
+    json_error('카테고리를 선택해 주세요.', 400);
 }
 
-$boardId   = (int)$board['id'];
-$boardCode = (string)$board['code'];
-
-// 공지/업데이트/이벤트 게시판은 운영자만 작성 가능
-if (is_admin_only_board($boardCode) && !is_admin_account($accountLogin)) {
+// isAminBoard = 1 이면 운영자만 글 작성 가능
+if ($isAdminBoard && !is_admin_account($accountLogin)) {
     json_error('운영자만 글을 작성할 수 있는 게시판입니다.', 403);
 }
 
 $now = date('Y-m-d H:i:s');
 
+// 공지글 처리: 운영자 계정일 때만 is_notice 설정 허용
+if (is_admin_account($accountLogin)) {
+    // 값이 "0" / 0 / false / null 이 아니고, 뭔가 들어와 있으면 전부 1로 처리
+    if (!empty($isNoticeRaw) && $isNoticeRaw !== '0' && $isNoticeRaw !== 0) {
+        $isNotice = 1;
+    }
+}
+
+if (!empty($isSecretRaw) && $isSecretRaw !== '0' && $isSecretRaw !== 0) {
+	$isSecret = 1;
+}
+
 // author_name은 일단 accountLogin으로 넣고,
 // 나중에 원하시면 l2jserver.characters에서 대표 캐릭터명을 가져와도 됨.
 $stmt = $pdo->prepare("
     INSERT INTO launcher_post (
-        board_id, g5_table, g5_wr_id, is_notice, category,
+        board_id, is_notice, is_secret, category,
         subject, content_html,
         author_login, author_name,
-        created_at, updated_at, is_deleted
+        created_at, updated_at
     )
     VALUES (
-        :board_id, NULL, NULL, 0, :category,
+        :board_id, :is_notice, :is_secret, :category,
         :subject, :content_html,
         :author_login, :author_name,
-        :created_at, :updated_at, 0
+        :created_at, :updated_at
     )
 ");
 $stmt->execute([
     ':board_id'     => $boardId,
+	':is_notice'    => $isNotice,
+	':is_secret'    => $isSecret,
     ':category'     => ($category !== '' ? $category : null),
     ':subject'      => $subject,
     ':content_html' => $contentHtml,

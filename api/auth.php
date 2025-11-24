@@ -143,9 +143,24 @@ function load_board(PDO $pdo, int $boardId): array
 
 /**
  * 공지/업데이트/이벤트 게시판인지 여부
- *  - 이 게시판들은 admin 만 글작성 가능
+   - launcher_board.isAminBoard = 1 인 게시판은 admin 전용으로 간주
  */
 function is_admin_only_board(string $code): bool
 {
-    return in_array($code, ['notice', 'update', 'event'], true);
+    $pdo = get_pdo_launcher();
+
+    $stmt = $pdo->prepare("
+        SELECT isAminBoard
+        FROM launcher_board
+        WHERE code = :code
+        LIMIT 1
+    ");
+    $stmt->execute([':code' => $code]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$row) {
+        return false;
+    }
+
+    return (bool)$row['isAminBoard'];
 }

@@ -32,8 +32,9 @@ $pdo = get_pdo_launcher();
 
 // 게시글 + 게시판 확인
 $stmt = $pdo->prepare("
-    SELECT p.id, p.board_id, p.is_deleted,
-           b.allow_reply
+    SELECT p.id, p.board_id,
+           b.code AS board_code,
+           b.isAminBoard
     FROM launcher_post p
     JOIN launcher_board b
       ON p.board_id = b.id
@@ -43,28 +44,25 @@ $stmt = $pdo->prepare("
 $stmt->execute([':id' => $postId]);
 $post = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$post || (int)$post['is_deleted'] === 1) {
+if (!$post) {
     json_error('존재하지 않거나 삭제된 게시글입니다.', 404);
 }
 
-if (!(bool)$post['allow_reply']) {
-    json_error('이 게시판에는 댓글을 작성할 수 없습니다.', 403);
-}
-
+$boardCode    = (string)$post['board_code'];
 $parentId = $parentCommentId > 0 ? $parentCommentId : null;
 
 $now = date('Y-m-d H:i:s');
 
 $stmt = $pdo->prepare("
     INSERT INTO launcher_comment (
-        post_id, g5_table, g5_wr_id, parent_comment_id,
+        post_id, parent_comment_id,
         content_html, author_login, author_name,
-        created_at, updated_at, is_deleted
+        created_at, updated_at
     )
     VALUES (
-        :post_id, NULL, NULL, :parent_id,
+        :post_id, :parent_id,
         :content_html, :author_login, :author_name,
-        :created_at, :updated_at, 0
+        :created_at, :updated_at
     )
 ");
 $stmt->execute([

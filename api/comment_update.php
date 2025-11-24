@@ -34,7 +34,7 @@ $pdo = get_pdo_launcher();
 
 // 댓글 조회
 $stmt = $pdo->prepare("
-    SELECT id, author_login, is_deleted
+    SELECT id, author_login
     FROM launcher_comment
     WHERE id = :id
     LIMIT 1
@@ -42,7 +42,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([':id' => $commentId]);
 $comment = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$comment || (int)$comment['is_deleted'] === 1) {
+if (!$comment) {
     json_error('존재하지 않거나 삭제된 댓글입니다.', 404);
 }
 

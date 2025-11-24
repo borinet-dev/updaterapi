@@ -26,7 +26,7 @@ $pdo = get_pdo_launcher();
 
 // 게시글 존재 여부 확인 (삭제 여부 포함)
 $stmt = $pdo->prepare("
-    SELECT id, is_deleted
+    SELECT id
     FROM launcher_post
     WHERE id = :id
     LIMIT 1
@@ -34,7 +34,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([':id' => $postId]);
 $post = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$post || (int)$post['is_deleted'] === 1) {
+if (!$post) {
     json_error('존재하지 않거나 삭제된 게시글입니다.', 404);
 }
 
@@ -49,7 +49,6 @@ $stmt = $pdo->prepare("
            created_at
     FROM launcher_comment
     WHERE post_id = :post_id
-      AND is_deleted = 0
     ORDER BY created_at ASC, id ASC
 ");
 $stmt->execute([':post_id' => $postId]);

@@ -827,6 +827,7 @@ if (isset($_POST['forgot'])) {
   <h4><span style="color:#FFFFFF;"><?php echo (!empty($error) ? "<label><strong>{$error}</strong></label>" : ""); ?></span></h4>
 </div>
 <br><br>
+<br><br>
 <!-- 트리거 버튼 -->
 <div class="row gx-4 gy-2 mb-3 align-items-center"> <!-- 더 벌리려면 gx-5, 줄이려면 gx-3 -->
   <div class="col-12 col-md-6 d-flex justify-content-md-end justify-content-center">
@@ -834,7 +835,7 @@ if (isset($_POST['forgot'])) {
             class="p-0 border-0 bg-transparent mx-md-2"
             style="width:40%; max-width:340px; cursor:pointer;"
             data-bs-toggle="modal" data-bs-target="#modalRegister">
-      <img src="https://borinet-dev.github.io/css/img/h2_account.webp"
+      <img src="https://borinet-dev.github.io/css/imgLauncher/h2_account.png"
            alt="신규 계정 생성"
            class="img-fluid w-100"
            width="680" height="176"
@@ -847,7 +848,7 @@ if (isset($_POST['forgot'])) {
             class="p-0 border-0 bg-transparent mx-md-2"
             style="width:40%; max-width:340px; cursor:pointer;"
             data-bs-toggle="modal" data-bs-target="#modalForgot">
-      <img src="https://borinet-dev.github.io/css/img/h2_password.webp"
+      <img src="https://borinet-dev.github.io/css/imgLauncher/h2_password.png"
            alt="비밀번호 분실 및 변경"
            class="img-fluid w-100"
            width="680" height="176"
@@ -1652,5 +1653,6 @@ if (isset($_POST['forgot'])) {
 })();
 </script>
 <br><br>
-<center><font color=white>※ 캐릭터 생성을 하지 않으면 계정이 삭제됩니다. ※</font></center>
+<br><br>
+<center><img width=450 src="https://borinet-dev.github.io/css/imgLauncher/acmmsg.png"></center>
 <br><br>

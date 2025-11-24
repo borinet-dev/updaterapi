@@ -33,7 +33,7 @@ $pdo = get_pdo_launcher();
 
 // 댓글 조회
 $stmt = $pdo->prepare("
-    SELECT id, author_login, is_deleted
+    SELECT id, author_login
     FROM launcher_comment
     WHERE id = :id
     LIMIT 1
@@ -41,7 +41,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([':id' => $commentId]);
 $comment = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$comment || (int)$comment['is_deleted'] === 1) {
+if (!$comment) {
     json_error('존재하지 않거나 이미 삭제된 댓글입니다.', 404);
 }
 
@@ -53,18 +53,13 @@ if (!$isAuthorUser && !$isAdminUser) {
     json_error('자신의 댓글만 삭제할 수 있습니다.', 403);
 }
 
-// 소프트 삭제
-$now = date('Y-m-d H:i:s');
-
+// 하드 삭제
 $stmt = $pdo->prepare("
-    UPDATE launcher_comment
-    SET is_deleted = 1,
-        updated_at = :updated_at
+    DELETE FROM launcher_comment
     WHERE id = :id
 ");
 $stmt->execute([
-    ':updated_at' => $now,
-    ':id'         => $commentId,
+    ':id' => $commentId,
 ]);
 
 json_response([
